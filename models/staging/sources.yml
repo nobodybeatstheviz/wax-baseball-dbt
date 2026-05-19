@@ -4,15 +4,34 @@ sources:
   - name: wax
     database: augmented-world-262319
     schema: wax_baseball
-    description: "Wax's personal baseball data — the attended-games spreadsheet, 41 years of provenance."
+    description: "Wax's personal baseball data — the attended-games spreadsheet, 41 years of provenance from grandfather's scorecards through a 2000s tracking app to a hand-maintained spreadsheet."
     tables:
       - name: attended_games
-        description: "One row per MLB game Wax has attended, 1984-present. Source of truth for which games matter."
+        description: "One row per MLB game Wax has attended, 1984-present. Source of truth for which games matter. 178 rows."
+        columns:
+          - name: WAX_GAME_ID
+            description: "Game ID matching Retrosheet's GAME_ID format. Composite of home_team_code + YYYYMMDD + game_number."
+            tests:
+              - unique
+              - not_null
 
   - name: retrosheet
     database: augmented-world-262319
     schema: baseball_public_dataset
-    description: "Retrosheet play-by-play data, provided as a courtesy through MLB's partnership with Google Cloud. Subscribed via Analytics Hub."
+    description: "Retrosheet play-by-play data, provided as a courtesy through MLB's partnership with Google Cloud. Subscribed via Analytics Hub. Retrosheet LLC owns the underlying data."
     tables:
       - name: retrosheet_games
-        description: "One row per MLB game. Game-level facts: teams, scores, venue, date, doubleheader/allstar flags."
+        description: |
+          One row per game. Game-level facts: teams, scores, venue, date, weather, attendance,
+          decision pitchers, doubleheader/allstar flags. ~190 columns total.
+
+          KNOWN SOURCE QUIRK (discovered 2026-05-20 via dbt test): GAME_ID is NOT unique at
+          source level — ~1872 duplicates exist in pre-MLB historical data (Negro Leagues,
+          exhibitions, pre-merger). All affected rows have GAME_TYPE_TX of 'exhibition' or
+          'championship' and team codes like ACY (Atlantic City). MLB games are unique.
+          stg_retrosheet_games filters to Wax's 178 attended MLB games where uniqueness holds.
+        columns:
+          - name: GAME_ID
+            description: "Retrosheet's primary game identifier. Format: {HOME_TEAM_CODE}{YYYYMMDD}{GAME_NUMBER}. Not enforced unique at source (see table description); enforced at staging layer."
+            tests:
+              - not_null

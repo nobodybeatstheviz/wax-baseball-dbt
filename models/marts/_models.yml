@@ -1,0 +1,53 @@
+version: 2
+
+models:
+  - name: fct_attended_games
+    description: |
+      One row per game Wax has attended, with Retrosheet's game-level context joined in
+      via wax_game_id = game_id. Materialized as a table for fast downstream queries
+      (agents, dashboards, ad-hoc analysis).
+
+      This model supersedes every ad-hoc `bq query` from 2026-05-16. Derived columns
+      (winning_team_id, score_margin, is_yankees_game, home_team_won) are pre-computed
+      so consumers don't recompute them on every read.
+
+      The Wax-spine vs. Retrosheet-context split: columns suffixed _wax come from Wax's
+      spreadsheet; columns suffixed _retro come from Retrosheet's authoritative record.
+      The duplication is intentional — it lets future data drift be detected with a
+      single WHERE clause.
+    columns:
+      - name: wax_game_id
+        description: "Primary key. Wax's game identifier; matches stg_attended_games.wax_game_id."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_attended_games')
+                field: wax_game_id
+      - name: game_date
+        description: "Date the game was played."
+        tests:
+          - not_null
+      - name: home_team_id_retro
+        description: "Retrosheet's home team code. NULL would indicate a join failure to Retrosheet."
+        tests:
+          - not_null
+      - name: away_team_id_retro
+        description: "Retrosheet's away team code. NULL would indicate a join failure."
+        tests:
+          - not_null
+      - name: is_yankees_game
+        description: "Boolean: was either team the Yankees (NYA)? Pre-computed for fast filtering."
+        tests:
+          - not_null
+      - name: home_team_won
+        description: "Boolean: did the home team win? NULL only if a score was missing."
+        tests:
+          - not_null
+      - name: game_type_wax
+        description: "Wax's classification of the game (Regular Season / Playoff / All-Star)."
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Regular Season', 'Playoff', 'All-Star']

@@ -1,0 +1,65 @@
+version: 2
+
+models:
+  - name: stg_attended_games
+    description: |
+      Thin staging model over Wax's attended-games spreadsheet. One row per attended MLB game.
+      Renames columns to snake_case; no joins, no derivations.
+    columns:
+      - name: wax_game_id
+        description: "Primary key. Matches Retrosheet's GAME_ID format."
+        tests:
+          - unique
+          - not_null
+      - name: game_date
+        description: "Date of attended game (YYYY-MM-DD)."
+        tests:
+          - not_null
+      - name: home_team_id
+        description: "Retrosheet 3-letter code for the home team of the matchup (NOT necessarily Wax's team)."
+        tests:
+          - not_null
+      - name: away_team_id
+        description: "Retrosheet 3-letter code for the visiting team."
+        tests:
+          - not_null
+      - name: game_type
+        description: "Wax's classification of the game's competitive context."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Regular Season', 'Playoff', 'All-Star']
+
+  - name: stg_retrosheet_games
+    description: |
+      Thin staging model over Retrosheet's retrosheet_games, filtered to Wax's 178 attended games.
+      Down-selects ~190 source columns to a curated 28 covering identifiers, scores, weather,
+      attendance, decision pitchers, and key flags. Source-side filter pushes down to BigQuery
+      so the scan only touches the games Wax cares about.
+    columns:
+      - name: game_id
+        description: "Retrosheet's primary game identifier. Join key to attended_games via wax_game_id."
+        tests:
+          - unique
+          - not_null
+      - name: game_date
+        description: "Date of game (YYYY-MM-DD)."
+        tests:
+          - not_null
+      - name: home_team_id
+        description: "Retrosheet 3-letter home team code. Note: uses historical codes (ANA not LAA for Angels, NYA for Yankees, NYN for Mets)."
+        tests:
+          - not_null
+      - name: away_team_id
+        description: "Retrosheet 3-letter away team code."
+        tests:
+          - not_null
+      - name: home_score
+        description: "Runs scored by home team."
+        tests:
+          - not_null
+      - name: away_score
+        description: "Runs scored by away team."
+        tests:
+          - not_null
