@@ -1,0 +1,18 @@
+version: 2
+
+sources:
+  - name: wax
+    database: augmented-world-262319
+    schema: wax_baseball
+    description: "Wax's personal baseball data — the attended-games spreadsheet, 41 years of provenance."
+    tables:
+      - name: attended_games
+        description: "One row per MLB game Wax has attended, 1984-present. Source of truth for which games matter."
+
+  - name: retrosheet
+    database: augmented-world-262319
+    schema: baseball_public_dataset
+    description: "Retrosheet play-by-play data, provided as a courtesy through MLB's partnership with Google Cloud. Subscribed via Analytics Hub."
+    tables:
+      - name: retrosheet_games
+        description: "One row per MLB game. Game-level facts: teams, scores, venue, date, doubleheader/allstar flags."

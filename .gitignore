@@ -1,0 +1,12 @@
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# Python virtual environment
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
