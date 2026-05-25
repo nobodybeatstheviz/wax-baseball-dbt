@@ -1,14 +1,14 @@
 dataModelId: 56baa78c-bdc0-4cc9-9c1b-44c4a3892179
 name: Wax Attended Games — Model v1
 url: https://app.sigmacomputing.com/nobodybeatstheviz/data-model/Wax-Attended-Games-Model-v1-2DEDLMiSiyaveISk7WRcKd
-documentVersion: 2
-latestDocumentVersion: 2
+documentVersion: 3
+latestDocumentVersion: 3
 ownerId: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
 folderId: f8238fe7-0050-4851-aa78-02055e4d4ef2
 createdBy: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
 updatedBy: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
 createdAt: '2026-05-23T01:56:45.032Z'
-updatedAt: '2026-05-23T02:46:16.733Z'
+updatedAt: '2026-05-25T15:10:22.466Z'
 schemaVersion: 1
 pages:
   - id: jqMu_7HgeC
@@ -169,7 +169,7 @@ pages:
               formatString: .1f
           - id: j_CbbSex6d
             formula: CountIf([Home Team Won?]) / Count([Game Date])
-            name: "Home-Team Win Rate\t"
+            name: Home-Team Win Rate
             format:
               kind: number
               formatString: .3f
