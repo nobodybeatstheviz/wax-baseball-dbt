@@ -1,5 +1,10 @@
 Welcome to your new dbt project!
 
+### Repo layout
+
+- `models/` — dbt models (the data pipeline; transforms BigQuery sources into `fct_attended_games`)
+- `data-models/` — Sigma Data Model specs pulled as YAML via the Sigma VS Code extension (the semantic layer published on top of the dbt fact table)
+
 ### Using the starter project
 
 Try running the following commands:

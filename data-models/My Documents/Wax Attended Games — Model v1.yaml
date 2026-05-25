@@ -1,0 +1,218 @@
+dataModelId: 56baa78c-bdc0-4cc9-9c1b-44c4a3892179
+name: Wax Attended Games — Model v1
+url: https://app.sigmacomputing.com/nobodybeatstheviz/data-model/Wax-Attended-Games-Model-v1-2DEDLMiSiyaveISk7WRcKd
+documentVersion: 2
+latestDocumentVersion: 2
+ownerId: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
+folderId: f8238fe7-0050-4851-aa78-02055e4d4ef2
+createdBy: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
+updatedBy: 6MQ0TzTqwWi7vpHxxQxf0IEq9YUK1
+createdAt: '2026-05-23T01:56:45.032Z'
+updatedAt: '2026-05-23T02:46:16.733Z'
+schemaVersion: 1
+pages:
+  - id: jqMu_7HgeC
+    name: Page 1
+    elements:
+      - id: DYMfNfcdCl
+        kind: table
+        source:
+          connectionId: d84f1ede-9cac-4075-b455-cdbb13e9c1ff
+          kind: warehouse-table
+          path:
+            - augmented-world-262319
+            - wax_baseball_dbt
+            - fct_attended_games
+        columns:
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/wax_game_id
+            formula: '[fct_attended_games/Wax Game Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/game_date
+            formula: '[fct_attended_games/Game Date]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/game_type_wax
+            formula: '[fct_attended_games/Game Type Wax]'
+            name: Game Type
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/venue_wax
+            formula: '[fct_attended_games/Venue Wax]'
+            name: Venue
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/city
+            formula: '[fct_attended_games/City]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/state
+            formula: '[fct_attended_games/State]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_name
+            formula: '[fct_attended_games/Home Team Name]'
+            name: Home Team
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_name
+            formula: '[fct_attended_games/Away Team Name]'
+            name: Away Team
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_id_wax
+            formula: '[fct_attended_games/Home Team Id Wax]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_id_wax
+            formula: '[fct_attended_games/Away Team Id Wax]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_id_retro
+            formula: '[fct_attended_games/Home Team Id Retro]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_id_retro
+            formula: '[fct_attended_games/Away Team Id Retro]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/park_id
+            formula: '[fct_attended_games/Park Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_score
+            formula: '[fct_attended_games/Home Score]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/away_score
+            formula: '[fct_attended_games/Away Score]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/innings_played
+            formula: '[fct_attended_games/Innings Played]'
+            name: Innings
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/game_length_minutes
+            formula: '[fct_attended_games/Game Length Minutes]'
+            name: Game Length (min)
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/day_of_week
+            formula: '[fct_attended_games/Day of Week]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/start_time
+            formula: '[fct_attended_games/Start Time]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/day_night_code
+            formula: '[fct_attended_games/Day Night Code]'
+            name: Day/Night
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/is_doubleheader
+            formula: '[fct_attended_games/Is Doubleheader]'
+            name: Doubleheader?
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/is_allstar
+            formula: '[fct_attended_games/Is Allstar]'
+            name: All-Star?
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/game_type_retro
+            formula: '[fct_attended_games/Game Type Retro]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/temperature_f
+            formula: '[fct_attended_games/Temperature F]'
+            name: Temperature (°F)
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/wind_direction_code
+            formula: '[fct_attended_games/Wind Direction Code]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/wind_speed_mph
+            formula: '[fct_attended_games/Wind Speed Mph]'
+            name: Wind Speed (mph)
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/precipitation_code
+            formula: '[fct_attended_games/Precipitation Code]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/sky_code
+            formula: '[fct_attended_games/Sky Code]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/attendance
+            formula: '[fct_attended_games/Attendance]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_plate_umpire
+            formula: '[fct_attended_games/Home Plate Umpire]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/winning_pitcher_id
+            formula: '[fct_attended_games/Winning Pitcher Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/losing_pitcher_id
+            formula: '[fct_attended_games/Losing Pitcher Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/save_pitcher_id
+            formula: '[fct_attended_games/Save Pitcher Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/winning_team_id
+            formula: '[fct_attended_games/Winning Team Id]'
+            hidden: true
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/score_margin
+            formula: '[fct_attended_games/Score Margin]'
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/is_yankees_game
+            formula: '[fct_attended_games/Is Yankees Game]'
+            name: Yankees Game?
+          - id: inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_won
+            formula: '[fct_attended_games/Home Team Won]'
+            name: Home Team Won?
+          - id: DQnDlPiAO4
+            formula: Year([Game Date])
+            name: Year
+          - id: c8U5dANqJ6
+            formula: Floor(Year([Game Date]) / 10) * 10
+            name: Decade
+          - id: '-E5JwA4nYw'
+            formula: Abs([Score Margin])
+            name: Absolute Score Margin
+          - id: HG_r_NZH1e
+            formula: Switch(True, [Year] <= 1996, "Childhood", [Year] <= 2007, "College / early career", [Year] <= 2020, "Family", True, "Recent")
+            name: Era (Wax)
+          - id: 1t9EQMAYZr
+            formula: If([Yankees Game?], If([Home Team Id Retro] = "NYA", [Home Team Won?], Not ([Home Team Won?])), Null)
+            name: Yankees Won?
+        metrics:
+          - id: Het2vIpPvS
+            formula: CountIf([Yankees Won?]) / CountIf([Yankees Game?])
+            name: Yankees Record at Attended Games
+            format:
+              kind: number
+              formatString: ',.3f'
+          - id: AFe0iMf1e7
+            formula: Avg([Game Length (min)])
+            name: Avg Game Length (min)
+            format:
+              kind: number
+              formatString: .0f
+          - id: tCFazPodhU
+            formula: Avg([Attendance])
+            name: Avg Attendance
+            format:
+              kind: number
+              formatString: ',.0f'
+          - id: HRVcdtqOkj
+            formula: Avg([Absolute Score Margin])
+            name: Avg Absolute Score Margin
+            format:
+              kind: number
+              formatString: .1f
+          - id: j_CbbSex6d
+            formula: CountIf([Home Team Won?]) / Count([Game Date])
+            name: "Home-Team Win Rate\t"
+            format:
+              kind: number
+              formatString: .3f
+        order:
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/wax_game_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/game_date
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/game_type_wax
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/venue_wax
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/city
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/state
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_name
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_name
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_id_wax
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_id_wax
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_id_retro
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/away_team_id_retro
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/park_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_score
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/away_score
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/innings_played
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/game_length_minutes
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/day_of_week
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/start_time
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/day_night_code
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/is_doubleheader
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/is_allstar
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/game_type_retro
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/temperature_f
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/wind_direction_code
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/wind_speed_mph
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/precipitation_code
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/sky_code
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/attendance
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_plate_umpire
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/winning_pitcher_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/losing_pitcher_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/save_pitcher_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/winning_team_id
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/score_margin
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/is_yankees_game
+          - inode-3iT0dK3pxV0qmvBrVWoOV2/home_team_won
+          - DQnDlPiAO4
+          - c8U5dANqJ6
+          - '-E5JwA4nYw'
+          - HG_r_NZH1e
+          - 1t9EQMAYZr
