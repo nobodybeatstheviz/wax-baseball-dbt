@@ -1,0 +1,88 @@
+name: publish-docs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-docs
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout dbt project
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dbt
+        run: |
+          python -m pip install --upgrade pip
+          pip install dbt-core==1.11.10 dbt-bigquery==1.11.1
+
+      - name: Write service account key
+        env:
+          GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          mkdir -p "$HOME/.gcp"
+          printf '%s' "$GCP_SA_KEY" > "$HOME/.gcp/sa.json"
+          chmod 600 "$HOME/.gcp/sa.json"
+
+      - name: Write dbt profile
+        run: |
+          mkdir -p "$HOME/.dbt"
+          cat > "$HOME/.dbt/profiles.yml" <<'EOF'
+          wax_baseball:
+            target: ci
+            outputs:
+              ci:
+                type: bigquery
+                method: service-account
+                keyfile: KEYFILE_PATH
+                project: augmented-world-262319
+                dataset: wax_baseball_dbt
+                location: US
+                threads: 4
+                priority: interactive
+                job_execution_timeout_seconds: 300
+                job_retries: 1
+          EOF
+          sed -i "s|KEYFILE_PATH|$HOME/.gcp/sa.json|" "$HOME/.dbt/profiles.yml"
+
+      - name: dbt deps
+        run: dbt deps
+
+      - name: dbt parse
+        run: dbt parse
+
+      - name: dbt docs generate
+        run: dbt docs generate
+
+      - name: Stage docs site
+        run: |
+          mkdir -p site
+          cp target/index.html site/
+          cp target/manifest.json site/
+          cp target/catalog.json site/
+          cp target/run_results.json site/ || true
+
+      - name: Publish to nobodybeatstheviz.github.io
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          personal_token: ${{ secrets.NBTV_REPO_TOKEN }}
+          external_repository: nobodybeatstheviz/nobodybeatstheviz.github.io
+          publish_branch: main
+          publish_dir: ./site
+          destination_dir: wax-baseball-dbt
+          keep_files: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "docs(wax-baseball-dbt): publish from ${{ github.sha }}"
