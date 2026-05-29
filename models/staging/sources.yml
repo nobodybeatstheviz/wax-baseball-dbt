@@ -35,3 +35,23 @@ sources:
             description: "Retrosheet's primary game identifier. Format: {HOME_TEAM_CODE}{YYYYMMDD}{GAME_NUMBER}. Not enforced unique at source (see table description); enforced at staging layer."
             tests:
               - not_null
+
+      - name: retrosheet_events
+        description: |
+          One row per play (event). Pitch-level granularity inside each play via PITCH_SEQ_TX
+          and PA_* counts; play-level granularity via EVENT_CD. ~180 columns at source covering
+          identifiers, batter/pitcher, count state, event classification, runners, fielding,
+          and downstream fate.
+
+          Joined to retrosheet_games by GAME_ID. stg_retrosheet_events down-selects to 28
+          curated columns covering the analytics surface Wax cares about; the rest stays at
+          source and can be re-exposed via a wider staging model later if needed.
+        columns:
+          - name: GAME_ID
+            description: "Foreign key to retrosheet_games.GAME_ID. Always present."
+            tests:
+              - not_null
+          - name: EVENT_ID
+            description: "Sequential event number within a game. Combined with GAME_ID forms a composite primary key for the play grain."
+            tests:
+              - not_null

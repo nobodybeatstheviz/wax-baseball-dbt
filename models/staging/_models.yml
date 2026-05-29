@@ -63,3 +63,43 @@ models:
         description: "Runs scored by away team."
         tests:
           - not_null
+
+  - name: stg_retrosheet_events
+    description: |
+      Thin staging model over Retrosheet's retrosheet_events, filtered to Wax's 178
+      attended games by default (toggle via `filter_to_attended` var). Down-selects
+      ~180 source columns to 28 covering the play-level analytics surface: identifiers,
+      inning/count state, batter/pitcher, event classification, and key flags.
+      Booleans cast from source 'T'/'F' strings; is_bottom_half_inning cast from the
+      source's 0/1 integer (BAT_HOME_ID).
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - game_id
+              - event_id
+    columns:
+      - name: game_id
+        description: "Retrosheet GAME_ID. Foreign key to stg_retrosheet_games / fct_games."
+        tests:
+          - not_null
+      - name: event_id
+        description: "Sequential event number within a game. (game_id, event_id) is the composite primary key."
+        tests:
+          - not_null
+      - name: inning
+        description: "Inning number (1+). Extra innings continue the count past 9."
+        tests:
+          - not_null
+      - name: is_bottom_half_inning
+        description: "True for bottom-half (home team batting). Derived from source BAT_HOME_ID = 1."
+        tests:
+          - not_null
+      - name: event_code
+        description: "Retrosheet event classification code (0-24). FK to dim_event_code."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_event_code')
+                field: event_code

@@ -1,7 +1,9 @@
 with source as (
 
     select * from {{ source('retrosheet', 'retrosheet_games') }}
+    {% if var('filter_to_attended', true) %}
     where GAME_ID in (select wax_game_id from {{ ref('stg_attended_games') }})
+    {% endif %}
 
 ),
 

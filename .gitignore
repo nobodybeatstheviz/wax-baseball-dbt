@@ -13,3 +13,4 @@ Thumbs.db
 
 # IDE — machine-specific settings (e.g., dbt Power User venv path)
 .vscode/
+dbt_internal_packages/

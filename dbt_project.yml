@@ -23,6 +23,13 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "dbt_packages"
 
 
+vars:
+  # When true (default), staging models filter to Wax's 178 attended games.
+  # Flip to false for broader analysis across the full Retrosheet substrate.
+  # Both stg_retrosheet_games and stg_retrosheet_events honor this var atomically —
+  # asymmetric flips would break fct_plays's LEFT JOIN cardinality to fct_games.
+  filter_to_attended: true
+
 models:
   wax_baseball:
     staging:

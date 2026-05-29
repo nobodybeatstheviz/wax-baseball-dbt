@@ -1,42 +1,45 @@
 version: 2
 
 models:
-  - name: fct_attended_games
+  - name: fct_games
     description: |
-      One row per game Wax has attended, with Retrosheet's game-level context joined in
-      via wax_game_id = game_id. Materialized as a table for fast downstream queries
-      (agents, dashboards, ad-hoc analysis).
+      One row per game in the filtered Retrosheet substrate (Wax's 178 attended games
+      by default; the full Retrosheet game catalog when `filter_to_attended: false`).
+      Retrosheet is the spine; Wax's attended-games spreadsheet LEFT-joins in via
+      game_id = wax_game_id. The `was_attended` flag distinguishes the two populations.
 
-      This model supersedes every ad-hoc `bq query` from 2026-05-16. Derived columns
-      (winning_team_id, score_margin, is_yankees_game, home_team_won) are pre-computed
-      so consumers don't recompute them on every read.
+      Derived columns (winning_team_id, score_margin, is_yankees_game, home_team_won)
+      are pre-computed so consumers don't recompute them on every read.
 
-      The Wax-spine vs. Retrosheet-context split: columns suffixed _wax come from Wax's
-      spreadsheet; columns suffixed _retro come from Retrosheet's authoritative record.
-      The duplication is intentional — it lets future data drift be detected with a
-      single WHERE clause.
+      The _wax / _retro column suffixes are intentional — they let future data drift
+      between Wax's spreadsheet and Retrosheet's authoritative record be detected with
+      a single WHERE clause.
     columns:
-      - name: wax_game_id
-        description: "Primary key. Wax's game identifier; matches stg_attended_games.wax_game_id."
+      - name: game_id
+        description: "Primary key. Retrosheet's GAME_ID."
         tests:
           - unique
           - not_null
-          - relationships:
-              arguments:
-                to: ref('stg_attended_games')
-                field: wax_game_id
       - name: game_date
         description: "Date the game was played."
         tests:
           - not_null
       - name: home_team_id_retro
-        description: "Retrosheet's home team code. NULL would indicate a join failure to Retrosheet."
+        description: "Retrosheet's home team code. The retro spine guarantees this is populated."
         tests:
           - not_null
       - name: away_team_id_retro
-        description: "Retrosheet's away team code. NULL would indicate a join failure."
+        description: "Retrosheet's away team code."
         tests:
           - not_null
+      - name: was_attended
+        description: "Boolean: did Wax attend this game? Derived from the LEFT JOIN to stg_attended_games."
+        tests:
+          - not_null
+      - name: wax_game_id
+        description: "Wax's game identifier. NULL for non-attended games (only possible when filter_to_attended is false)."
+        tests:
+          - unique
       - name: is_yankees_game
         description: "Boolean: was either team the Yankees (NYA)? Pre-computed for fast filtering."
         tests:
@@ -46,8 +49,97 @@ models:
         tests:
           - not_null
       - name: game_type_wax
-        description: "Wax's classification of the game (Regular Season / Playoff / All-Star)."
+        description: "Wax's classification of the game (Regular Season / Playoff / All-Star). NULL for non-attended games."
         tests:
           - accepted_values:
               arguments:
                 values: ['Regular Season', 'Playoff', 'All-Star']
+              config:
+                where: "was_attended = true"
+
+  - name: fct_attended_games
+    description: |
+      Compatibility view over fct_games filtered to was_attended = true. Preserves the
+      column contract for downstream consumers (Sigma data model, Claude Agent SDK,
+      ad-hoc queries) that referenced this model before the 2026-05-28 split into
+      fct_games (game grain) and fct_plays (play grain).
+    columns:
+      - name: wax_game_id
+        description: "Wax's game identifier. Non-null in this view by construction."
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_attended_games')
+                field: wax_game_id
+      - name: was_attended
+        description: "Always true in this view (filter clause)."
+        tests:
+          - not_null
+
+  - name: fct_plays
+    description: |
+      One row per play (event), filtered to plays in the games surfaced by fct_games
+      via the shared `filter_to_attended` var. Denormalizes the most common game-level
+      filter columns (game_date, was_attended, team codes, park, venue_wax,
+      is_yankees_game) for the 80% query path. Re-join to fct_games for heavier
+      enrichment (weather, attendance, decision pitchers).
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - game_id
+              - event_id
+    columns:
+      - name: game_id
+        description: "Foreign key to fct_games."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_games')
+                field: game_id
+      - name: event_id
+        description: "Sequential event number within a game. (game_id, event_id) is the composite primary key."
+        tests:
+          - not_null
+      - name: was_attended
+        description: "Inherited from fct_games via the LEFT JOIN on game_id. Distinguishes attended-game plays from broader-substrate plays."
+        tests:
+          - not_null
+      - name: event_code
+        description: "Retrosheet event classification (0-24). FK to dim_event_code."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_event_code')
+                field: event_code
+
+  - name: dim_event_code
+    description: |
+      Retrosheet event code lookup (0-24). Standard Chadwick Bureau cwevent classification:
+      hits, outs, walks, strikeouts, baserunning events, etc. Loaded from
+      seeds/retrosheet_event_codes.csv.
+    columns:
+      - name: event_code
+        description: "Retrosheet event code (0-24). Primary key."
+        tests:
+          - unique
+          - not_null
+      - name: event_name
+        description: "Human-readable name (e.g., 'Single', 'Strikeout', 'Walk')."
+        tests:
+          - not_null
+      - name: event_category
+        description: "Broad bucket: hit, out, reach, baserunning, pitching, fielding, administrative, unknown."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['hit', 'out', 'reach', 'baserunning', 'pitching', 'fielding', 'administrative', 'unknown']
+      - name: is_batter_event
+        description: "True when the event resolves a plate appearance (hits, outs, walks, etc.) vs. baserunning/pitching events that occur mid-PA."
+        tests:
+          - not_null
