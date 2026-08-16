@@ -1,0 +1,69 @@
+version: 2
+
+seeds:
+  - name: attendee_roster
+    description: |
+      HAND-MAINTAINED canonical attendee registry. One row per distinct attendee name
+      that may appear in baseball-attendees.csv. Established by the 2026-08-16 name
+      rulings (wax-baseball/attendee-name-rulings-2026-08-16.md), which collapsed 101
+      raw values to 85 canonical ones.
+
+      This seed is the closed set: sync_attendees_to_dbt.py refuses to sync when the CSV
+      contains a name that is not registered here. That is deliberate — it turns a typo
+      into a loud failure instead of a quiet new person in the dimension.
+
+      To add someone, add the row here first, then edit the CSV.
+
+      It is also the resolution table the natural-language write-agent will map against
+      ("I went with Bergan and Matt") — see the spoke's Step 4.
+    config:
+      # real_name is empty in the published seed, and dbt infers INT64 for an all-empty
+      # column -- which breaks trim(real_name) in stg_attendee_roster. Pin the types so
+      # the model does not depend on a value happening to be present.
+      column_types:
+        attendee_name: STRING
+        attendee_type: STRING
+        real_name: STRING
+    columns:
+      - name: attendee_name
+        # Published names are first name + last initial (e.g. "Mike B") -- the
+        # convention this dataset already used. Full names are not published.
+        description: "Canonical name. Primary key. Disambiguated forms win over bare first names (Bob N, not Bob)."
+        tests:
+          - unique
+          - not_null
+      - name: attendee_type
+        description: |
+          person  — a named individual
+          group   — a real answer that is not one person ('Peeps', 'College Friends')
+          self    — 'solo'; Wax alone. Present so a solo game is distinguishable from a blank one.
+          unknown — he was there with someone and cannot recall who. An answer, not a blank.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['person', 'group', 'self', 'unknown']
+      - name: real_name
+        description: |
+          Deliberately empty in the published seed. Relationship labels (Poppa, Dad,
+          Uncle Dave) are what Wax actually called them and stay canonical as the key;
+          the legal names behind them are not published. The column is kept so the
+          contract is stable if a private variant of this seed ever needs it.
+
+  - name: wax_game_attendees
+    description: |
+      DERIVED — regenerated from wax-baseball/baseball-attendees.csv by
+      sync_attendees_to_dbt.py on every run. Never hand-edit; edits belong in the CSV,
+      which stays the flat, openable source of truth.
+
+      Deliberately still wide (attendee_1..4), so the seed remains a faithful mirror of
+      the file. The grain change to one-row-per-game-person happens in stg_game_attendees.
+    columns:
+      - name: wax_game_id
+        description: "Game identifier, matching Retrosheet's GAME_ID format. Primary key."
+        tests:
+          - unique
+          - not_null
+
+  - name: retrosheet_event_codes
+    description: "Retrosheet event code lookup (0-24), Chadwick Bureau cwevent classification. Source for dim_event_code."

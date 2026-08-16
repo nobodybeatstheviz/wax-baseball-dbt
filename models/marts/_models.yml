@@ -143,3 +143,87 @@ models:
         description: "True when the event resolves a plate appearance (hits, outs, walks, etc.) vs. baserunning/pitching events that occur mid-PA."
         tests:
           - not_null
+
+  - name: dim_attendee
+    description: |
+      One row per canonical attendee — the people, groups, and placeholder tokens Wax has
+      logged across 41 years of games. Spine is the attendee_roster seed, so a registered
+      name that appears in no game still gets a row (games_attended = 0) rather than
+      disappearing.
+
+      games_attended / first_game_date / last_game_date are pre-computed for the same
+      reason fct_games pre-computes its derived columns: they answer most of what gets
+      asked here ("who have I seen the most games with", "when did we start going"), and
+      recomputing them per read is waste.
+
+      Replaces what the flat attendee_1..4 columns could not do — and removes their hard
+      cap of four people per game.
+    columns:
+      - name: attendee_key
+        description: "Surrogate key over attendee_name. Primary key."
+        tests:
+          - unique
+          - not_null
+      - name: attendee_name
+        description: "Canonical name. Naturally unique; the surrogate exists so downstream joins survive a rename."
+        tests:
+          - unique
+          - not_null
+      - name: attendee_type
+        description: "person | group | self | unknown. Lets consumers exclude non-people without a hardcoded name list."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['person', 'group', 'self', 'unknown']
+      - name: games_attended
+        description: "Games this attendee appears in. 0 for a roster entry not yet used."
+        tests:
+          - not_null
+      - name: is_person
+        description: "Convenience boolean for attendee_type = 'person'."
+        tests:
+          - not_null
+
+  - name: fct_game_attendee
+    description: |
+      One row per game x attendee — the bridge between fct_games and dim_attendee, and the
+      model that makes the who-questions answerable: most-frequent companions, first and
+      last game with each person, who was there for the playoff runs.
+
+      Denormalizes game_date, is_yankees_game and game_type_wax for the 80% query path,
+      matching fct_plays' convention; re-join to fct_games for anything heavier.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - wax_game_id
+              - attendee_key
+    columns:
+      - name: wax_game_id
+        description: "Foreign key to fct_attended_games."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_attended_games')
+                field: wax_game_id
+      - name: attendee_key
+        description: "Foreign key to dim_attendee. An orphan here means the seeds drifted apart."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_attendee')
+                field: attendee_key
+      - name: attendee_type
+        description: "Denormalized from dim_attendee."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['person', 'group', 'self', 'unknown']
+      - name: game_date
+        description: "Denormalized from fct_games."
+        tests:
+          - not_null

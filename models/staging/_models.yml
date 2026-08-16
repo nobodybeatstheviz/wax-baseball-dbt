@@ -103,3 +103,66 @@ models:
               arguments:
                 to: ref('dim_event_code')
                 field: event_code
+
+  - name: stg_attendee_roster
+    description: |
+      Thin staging model over the hand-maintained attendee_roster seed — the canonical
+      name registry established by the 2026-08-16 rulings. Trims whitespace and converts
+      empty real_name to NULL. No joins, no derivations.
+    columns:
+      - name: attendee_name
+        description: "Canonical attendee name. Primary key."
+        tests:
+          - unique
+          - not_null
+      - name: attendee_type
+        description: "person | group | self | unknown. See seeds/_seeds.yml for what each means."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['person', 'group', 'self', 'unknown']
+
+  - name: stg_game_attendees
+    description: |
+      Unpivots the flat attendee_1..4 seed columns into one row per game-person. This is
+      where the grain changes; the seed and the underlying CSV stay wide and hand-editable.
+
+      source_column and source_position preserve provenance back to the exact cell in
+      baseball-attendees.csv, so a suspect row can be traced to "attendee_3 on that game"
+      without reading the DAG.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - wax_game_id
+              - source_position
+    columns:
+      - name: wax_game_id
+        description: "Game identifier. Foreign key to stg_attended_games."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_attended_games')
+                field: wax_game_id
+      - name: attendee_name
+        description: |
+          Canonical attendee name. The relationships test below is the closed-set check the
+          spoke called for: every name used in a game must exist in the roster. It is the
+          second line of defence behind sync_attendees_to_dbt.py, which fails the sync on an
+          unregistered name before dbt ever runs.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_attendee_roster')
+                field: attendee_name
+      - name: source_position
+        description: "Which of the four flat columns this row came from (1-4). Provenance, not meaning — attendee order carries no significance."
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [1, 2, 3, 4]
+                quote: false
