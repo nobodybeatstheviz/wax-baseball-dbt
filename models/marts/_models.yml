@@ -227,3 +227,69 @@ models:
         description: "Denormalized from fct_games."
         tests:
           - not_null
+
+  - name: fct_attended_team_games
+    description: |
+      One row per attended game x participating team (178 games -> 356 rows).
+      The unpivot that makes attended_win_rate a governed metric with team as a
+      DIMENSION rather than a hardcoded constant (ruled 2026-08-31). team_won
+      derives from winning_team_id, which fct_games computes from Retrosheet
+      scores — authoritative, untouched by the known raw-table venue/home/away
+      swap on the two 2000 Subway Series rows.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          arguments:
+            combination_of_columns:
+              - game_id
+              - team_id
+    columns:
+      - name: game_id
+        description: "FK to fct_games. Each game contributes exactly two rows."
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_games')
+                field: game_id
+      - name: team_id
+        description: "This row's team (Retrosheet code). The win-rate dimension."
+        tests:
+          - not_null
+      - name: is_home
+        description: "Boolean: was this row's team the home side?"
+        tests:
+          - not_null
+      - name: team_won
+        description: "Boolean: did this row's team win? False for losses AND undecided games — is_decided separates them."
+        tests:
+          - not_null
+      - name: is_decided
+        description: "Boolean: game had a winner. The win-rate denominator filter."
+        tests:
+          - not_null
+
+  - name: fct_hof_sightings
+    description: |
+      One row per Hall of Famer (inducted as a player) who batted or pitched in
+      a game Wax attended — the four-way join (attended spreadsheet -> Retrosheet
+      plays -> Lahman People.retroID -> Lahman HallOfFame) materialized once, so
+      every engine's semantic layer defines the same trivial count over the same
+      ported table.
+    columns:
+      - name: player_id
+        description: "Lahman player key. Primary key."
+        tests:
+          - unique
+          - not_null
+      - name: player_name
+        description: "Display name from Lahman People."
+        tests:
+          - not_null
+      - name: games_seen
+        description: "Distinct attended games this player appeared in."
+        tests:
+          - not_null
+      - name: first_seen_date
+        description: "Earliest attended game with this player on the field."
+        tests:
+          - not_null

@@ -1,0 +1,162 @@
+version: 2
+
+# The semantic layer over the marts — entities, dimensions, measures.
+# Metrics live in metrics.yml; this file defines what they aggregate over.
+# These definitions are the reference implementation for the cross-engine
+# parity work: Snowflake Cortex, Databricks metric views, and D360 SDMs
+# each re-express THESE, verified by the golden-question harness.
+
+semantic_models:
+
+  - name: attended_games
+    description: >
+      Game grain over the 178 attended games (fct_attended_games view).
+      The home of whole-game measures: attendance counts, distinct stadiums.
+    model: ref('fct_attended_games')
+    defaults:
+      agg_time_dimension: game_date
+    entities:
+      - name: attended_game
+        type: primary
+        expr: wax_game_id
+    dimensions:
+      - name: game_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: venue
+        type: categorical
+        expr: venue_wax
+      - name: game_type
+        type: categorical
+        expr: game_type_wax
+      - name: is_yankees_game
+        type: categorical
+    measures:
+      - name: games_attended_count
+        description: "Count of attended games."
+        agg: count
+        expr: wax_game_id
+      - name: distinct_stadiums
+        description: "Distinct venues across attended games (venue from the spreadsheet, the ruled source of truth on venue)."
+        agg: count_distinct
+        expr: venue_wax
+
+  - name: attended_team_games
+    description: >
+      Team-game grain (game x participating team, 356 rows). Exists so win rate
+      is one governed metric with team as a dimension — any team is a query-time
+      filter, none is hardcoded (ruled 2026-08-31).
+    model: ref('fct_attended_team_games')
+    defaults:
+      agg_time_dimension: game_date
+    entities:
+      - name: attended_team_game
+        type: primary
+        expr: game_id || '-' || team_id
+    dimensions:
+      - name: game_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: team
+        type: categorical
+        expr: team_id
+      - name: opponent
+        type: categorical
+        expr: opponent_team_id
+      - name: is_home
+        type: categorical
+    measures:
+      - name: team_wins_count
+        description: "Games this team won with Wax in the stands."
+        agg: sum
+        expr: case when team_won then 1 else 0 end
+      - name: decided_team_games_count
+        description: "Team-games with a winner (ties/suspended games drop out of the denominator)."
+        agg: sum
+        expr: case when is_decided then 1 else 0 end
+
+  - name: plays
+    description: >
+      Play grain over attended games (fct_plays under the default
+      filter_to_attended). The home of what-Wax-witnessed measures.
+    model: ref('fct_plays')
+    defaults:
+      agg_time_dimension: game_date
+    entities:
+      - name: play
+        type: primary
+        expr: game_id || '-' || cast(event_id as string)
+    dimensions:
+      - name: game_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: event_code
+        type: categorical
+      - name: batting_team_is_home
+        type: categorical
+        expr: is_bottom_half_inning
+    measures:
+      - name: home_runs_count
+        description: "Home runs Wax was in the building for. EVENT_CD 23, governed at last."
+        agg: sum
+        expr: case when event_code = 23 then 1 else 0 end
+      - name: runs_count
+        description: "Runs scored across all plays of attended games."
+        agg: sum
+        expr: runs_on_play
+
+  - name: game_attendees
+    description: >
+      Game x attendee grain (fct_game_attendee) — who Wax was there with.
+    model: ref('fct_game_attendee')
+    defaults:
+      agg_time_dimension: game_date
+    entities:
+      - name: game_attendee
+        type: primary
+        expr: wax_game_id || '-' || attendee_key
+    dimensions:
+      - name: game_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: attendee_name
+        type: categorical
+      - name: attendee_type
+        type: categorical
+    measures:
+      - name: attendee_game_count
+        description: "Game-attendee rows; grouped by attendee_name it answers 'who have I seen the most games with'."
+        agg: count
+        expr: attendee_key
+
+  - name: hof_sightings
+    description: >
+      Player grain: Hall of Famers (inducted as players) who appeared as batter
+      or pitcher in a play of an attended game. The four-way join
+      (spreadsheet -> Retrosheet -> Lahman People -> Lahman HallOfFame),
+      materialized once in fct_hof_sightings.
+    model: ref('fct_hof_sightings')
+    defaults:
+      agg_time_dimension: first_seen_date
+    entities:
+      - name: hof_player
+        type: primary
+        expr: player_id
+    dimensions:
+      - name: first_seen_date
+        type: time
+        type_params:
+          time_granularity: day
+      - name: player_name
+        type: categorical
+      - name: induction_year
+        type: categorical
+    measures:
+      - name: hall_of_famers_count
+        description: "Distinct Hall of Famers seen playing."
+        agg: count_distinct
+        expr: player_id

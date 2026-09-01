@@ -55,3 +55,36 @@ sources:
             description: "Sequential event number within a game. Combined with GAME_ID forms a composite primary key for the play grain."
             tests:
               - not_null
+
+  - name: lahman
+    database: augmented-world-262319
+    schema: lahman
+    description: |
+      SABR Lahman Database 2025 (CC BY-SA) — the career/biography layer of the
+      corpus. Loaded by load_lahman_bq.py from wax-system's content-hash-pinned
+      copy (MANIFEST.sha256 replaced the git-tag pin when the upstream Chadwick
+      repo was deleted). Only the tables the semantic layer needs live here;
+      the full 27-table Lahman set lives in Snowflake and Databricks.
+    tables:
+      - name: people
+        description: |
+          Player biographies and, critically, the identity bridge: retroID links
+          Lahman careers to Retrosheet play-by-play ids. Source columns are
+          camelCase (playerID, retroID) — a Lahman convention preserved on load.
+        columns:
+          - name: playerID
+            description: "Lahman's primary player key."
+            tests:
+              - unique
+              - not_null
+      - name: hall_of_fame
+        description: |
+          Hall of Fame BALLOT history — one row per player per ballot year, not
+          per induction. inducted = 'Y' marks the actual inductions;
+          stg_lahman_hall_of_fame filters to those. yearid is lowercase in the
+          2025 drop (source quirk).
+        columns:
+          - name: playerID
+            description: "FK to people.playerID."
+            tests:
+              - not_null

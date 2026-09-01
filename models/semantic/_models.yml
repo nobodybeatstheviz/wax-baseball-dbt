@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: metricflow_time_spine
+    description: >
+      MetricFlow's required date spine (P1 finding 2026-08-31: the semantic
+      layer refuses to resolve any metric without one). Daily grain,
+      1980-01-01 through 2030-12-31 — brackets the attended-games era.
+    time_spine:
+      standard_granularity_column: date_day
+    columns:
+      - name: date_day
+        granularity: day
+        description: "Calendar day."
+        tests:
+          - unique
+          - not_null

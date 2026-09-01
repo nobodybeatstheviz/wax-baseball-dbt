@@ -1,0 +1,46 @@
+version: 2
+
+models:
+  - name: stg_lahman_people
+    description: >
+      Lahman People narrowed to the identity bridge: player_id, retro_id (the
+      join to Retrosheet batter/pitcher ids), display name, career bookends.
+      Rows without a retroID stay at source — they can never match a play.
+    columns:
+      - name: player_id
+        description: "Lahman player key."
+        tests:
+          - unique
+          - not_null
+      - name: retro_id
+        description: >
+          Retrosheet id — the bridge column this model exists for. 21 known
+          duplicate retro_ids exist at source (Lahman assigned the same retroID
+          to two distinct playerIDs, all pre-modern-era players): none are Hall
+          of Famers and none can appear in 1984+ attended plays, so the
+          fct_hof_sightings join cannot fan out. Warn-level so a future Lahman
+          drop that changes this surfaces without breaking the build.
+        tests:
+          - unique:
+              config:
+                severity: warn
+          - not_null
+
+  - name: stg_lahman_hall_of_fame
+    description: >
+      Actual Hall of Fame inductions (inducted = 'Y' only; the ballot history
+      stays at source). One row per player per category inducted.
+    columns:
+      - name: player_id
+        description: "FK to stg_lahman_people.player_id (HOF includes pioneers/executives with no retroID, so no relationship test)."
+        tests:
+          - not_null
+      - name: category
+        description: >
+          What they were inducted as. The 2025 drop split the legacy
+          'Pioneer/Executive' value into separate 'Executive' and 'Pioneer'
+          while keeping 9 old combined rows — all six values are real.
+        tests:
+          - accepted_values:
+              arguments:
+                values: ['Player', 'Manager', 'Umpire', 'Pioneer/Executive', 'Executive', 'Pioneer']

@@ -1,0 +1,75 @@
+version: 2
+
+# The seven governed metrics (ruled 2026-08-31), plus the two component metrics
+# MetricFlow's ratio type requires as named inputs for attended_win_rate.
+# These names are the parity contract: each engine's semantic layer expresses
+# these same definitions, and the golden-question harness verifies the numbers.
+
+metrics:
+
+  - name: games_attended
+    label: Games Attended
+    description: "MLB games Wax has attended. The 178."
+    type: simple
+    type_params:
+      measure: games_attended_count
+
+  - name: unique_stadiums
+    label: Unique Stadiums
+    description: "Distinct ballparks across attended games."
+    type: simple
+    type_params:
+      measure: distinct_stadiums
+
+  - name: home_runs_witnessed
+    label: Home Runs Witnessed
+    description: "Home runs hit in games Wax attended (Retrosheet event code 23)."
+    type: simple
+    type_params:
+      measure: home_runs_count
+
+  - name: runs_witnessed
+    label: Runs Witnessed
+    description: "Total runs scored in attended games."
+    type: simple
+    type_params:
+      measure: runs_count
+
+  - name: team_wins_attended
+    label: Team Wins (Attended)
+    description: "Component metric: wins by team with Wax in the stands. Group or filter by team."
+    type: simple
+    type_params:
+      measure: team_wins_count
+
+  - name: team_games_decided
+    label: Decided Team-Games (Attended)
+    description: "Component metric: attended team-games with a winner."
+    type: simple
+    type_params:
+      measure: decided_team_games_count
+
+  - name: attended_win_rate
+    label: Attended Win Rate
+    description: >
+      Share of decided attended games a team won, with team as a dimension —
+      no team is hardcoded (ruled 2026-08-31). "How did the Yankees do with me
+      there?" is attended_win_rate filtered to team = 'NYA'.
+    type: ratio
+    type_params:
+      numerator: team_wins_attended
+      denominator: team_games_decided
+
+  - name: games_per_attendee
+    label: Games per Attendee
+    description: "Game-attendee count; grouped by attendee_name it ranks companions."
+    type: simple
+    type_params:
+      measure: attendee_game_count
+
+  - name: hall_of_famers_seen
+    label: Hall of Famers Seen
+    description: "Distinct players, later inducted to the Hall of Fame as players, who batted or pitched in a game Wax attended."
+    type: simple
+    type_params:
+      measure: hall_of_famers_count
