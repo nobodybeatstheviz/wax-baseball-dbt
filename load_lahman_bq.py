@@ -6,6 +6,14 @@ the two tables the semantic layer needs — People (the retroID bridge to
 Retrosheet ids) and HallOfFame — into the `lahman` dataset. Rerunnable: each
 load is --replace, so a refreshed Lahman drop just reruns this.
 
+NOTE: the CI docs pipeline reads every source dataset as the
+dbt-docs-publisher service account. The lahman dataset carries a READER
+grant for it (added 2026-08-31 after the first post-Lahman docs run failed
+on lahman.INFORMATION_SCHEMA). If this dataset is ever dropped and
+recreated, re-grant via the legacy ACL pattern in
+wax-system/wax-baseball/baseball-dbt-learning-doc.md (bq add-iam-policy-binding
+is allowlist-gated on this project).
+
 Usage:  py load_lahman_bq.py
 """
 
