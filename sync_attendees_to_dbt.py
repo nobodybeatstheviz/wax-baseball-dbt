@@ -50,7 +50,7 @@ HERE = Path(__file__).parent
 SOURCE = Path(
     os.environ.get(
         'WAX_ATTENDEES_CSV',
-        Path.home() / 'wax-system' / 'wax-baseball' / 'baseball-attendees.csv',
+        Path.home() / 'wax-system' / 'wax-baseball' / 'substrate' / 'baseball-attendees.csv',
     )
 )
 SEEDS = HERE / 'seeds'
