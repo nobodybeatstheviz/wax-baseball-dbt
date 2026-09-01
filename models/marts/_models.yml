@@ -92,6 +92,11 @@ models:
               - game_id
               - event_id
     columns:
+      - name: play_key
+        description: "Single-column grain key (game_id-event_id), for downstream systems that demand one primary-key column (Data 360 DLOs)."
+        tests:
+          - unique
+          - not_null
       - name: game_id
         description: "Foreign key to fct_games."
         tests:
@@ -200,6 +205,11 @@ models:
               - wax_game_id
               - attendee_key
     columns:
+      - name: game_attendee_key
+        description: "Single-column grain key (wax_game_id-attendee_key), for downstream single-PK consumers (Data 360 DLOs)."
+        tests:
+          - unique
+          - not_null
       - name: wax_game_id
         description: "Foreign key to fct_attended_games."
         tests:
@@ -243,6 +253,11 @@ models:
               - game_id
               - team_id
     columns:
+      - name: team_game_key
+        description: "Single-column grain key (game_id-team_id) — the semantic model's entity expression, materialized for downstream single-PK consumers (Data 360 DLOs)."
+        tests:
+          - unique
+          - not_null
       - name: game_id
         description: "FK to fct_games. Each game contributes exactly two rows."
         tests:

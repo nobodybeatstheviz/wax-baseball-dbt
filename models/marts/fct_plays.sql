@@ -22,6 +22,10 @@ games as (
 joined as (
 
     select
+        -- explicit single-column grain key alongside the composite, for downstream
+        -- systems (Data 360 DLOs) that demand exactly one primary-key column.
+        plays.game_id || '-' || cast(plays.event_id as string) as play_key,
+
         -- composite primary key
         plays.game_id,
         plays.event_id,

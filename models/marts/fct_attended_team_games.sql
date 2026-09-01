@@ -63,6 +63,9 @@ unioned as (
 final as (
 
     select
+        -- explicit grain key: (game, team) — same expression the semantic model's
+        -- entity uses, materialized for downstream single-column-PK consumers (D360).
+        game_id || '-' || team_id                        as team_game_key,
         *,
 
         -- ties/suspended games have no winning_team_id; they stay in the table

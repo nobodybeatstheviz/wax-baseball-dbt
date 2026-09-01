@@ -29,6 +29,9 @@ games as (
 final as (
 
     select
+        -- explicit grain key: (game, attendee). Downstream systems that demand a
+        -- single-column primary key (Data 360 DLOs) get one instead of inventing one.
+        game_attendees.wax_game_id || '-' || attendees.attendee_key as game_attendee_key,
         game_attendees.wax_game_id,
         attendees.attendee_key,
         attendees.attendee_name,
