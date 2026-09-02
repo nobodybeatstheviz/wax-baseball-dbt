@@ -1,10 +1,13 @@
 """Load the Lahman tables the dbt project declares as sources into BigQuery.
 
-The wax-system repo holds the pinned SABR Lahman 2025 CSVs (content-hashed in
-MANIFEST.sha256 after the upstream Chadwick repo was deleted). This script places
-the two tables the semantic layer needs — People (the retroID bridge to
-Retrosheet ids) and HallOfFame — into the `lahman` dataset. Rerunnable: each
-load is --replace, so a refreshed Lahman drop just reruns this.
+The SABR Lahman CSVs are not kept in any repo (ruled 2026-09-02 — the engines
+hold the data and SABR republishes each winter). Download the bundle from
+https://sabr.org/lahman-database/, unzip to ~/Downloads/lahman_1871-2025_csv
+(or set LAHMAN_DIR), and verify against the release pin
+wax-system/wax-baseball/lahman-2025/MANIFEST.sha256 (`sha256sum -c` inside the
+dir). This script places the two tables the semantic layer needs — People (the
+retroID bridge to Retrosheet ids) and HallOfFame — into the `lahman` dataset.
+Rerunnable: each load is --replace, so a refreshed Lahman drop just reruns this.
 
 NOTE: the CI docs pipeline reads every source dataset as the
 dbt-docs-publisher service account. The lahman dataset carries a READER
@@ -17,6 +20,7 @@ is allowlist-gated on this project).
 Usage:  py load_lahman_bq.py
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -25,7 +29,14 @@ from pathlib import Path
 BQ = shutil.which("bq") or sys.exit("bq CLI not found on PATH")
 PROJECT = "augmented-world-262319"
 DATASET = "lahman"
-SOURCE_DIR = Path(r"C:\Users\georg\wax-system\wax-baseball\lahman-2025\lahman_1871-2025_csv")
+SABR_URL = "https://sabr.org/lahman-database/"
+MANIFEST = r"wax-system\wax-baseball\lahman-2025\MANIFEST.sha256"
+SOURCE_DIR = Path(os.environ.get("LAHMAN_DIR") or Path.home() / "Downloads" / "lahman_1871-2025_csv")
+if not SOURCE_DIR.is_dir():
+    sys.exit(
+        f"Lahman CSVs not found at {SOURCE_DIR}. Download the bundle from {SABR_URL}, unzip it there "
+        f"(or set LAHMAN_DIR), and verify with `sha256sum -c` against {MANIFEST} before loading."
+    )
 
 # CSV file -> BigQuery table. Extend here if the semantic layer ever needs more
 # of the 27 tables; Batting/Pitching stay in Snowflake/Databricks (full Lahman
