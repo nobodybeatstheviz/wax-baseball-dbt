@@ -30,6 +30,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import csv
+import dataclasses
 import datetime
 import io
 import json
@@ -38,6 +39,7 @@ import pathlib
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Any
 
 from claude_agent_sdk import (
@@ -46,6 +48,7 @@ from claude_agent_sdk import (
     ResultMessage,
     TextBlock,
     ToolUseBlock,
+    UserMessage,
     create_sdk_mcp_server,
     query,
     tool,
@@ -199,6 +202,9 @@ async def main() -> None:
     parser.add_argument("--no-semantic-layer", action="store_true", help="contrast run: raw SQL tool instead")
     parser.add_argument("--use-api-key", action="store_true",
                         help="keep ANTHROPIC_API_KEY from the environment (default: drop it so the Claude Code CLI login is used)")
+    parser.add_argument("--trace-out", default=None,
+                        help="write a JSON trace (tool calls/results + full ResultMessage fields, "
+                             "wall-clock-timestamped) to this path — the O7 observability capture")
     args = parser.parse_args()
 
     # Ride the Claude Code CLI login by default. An ANTHROPIC_API_KEY in the user
@@ -239,23 +245,68 @@ async def main() -> None:
     print(f"=== {mode} · runtime={args.model} ===")
     print(f"Q: {args.question}\n")
     tool_calls = 0
+    t0 = time.time()
+    events: list[dict[str, Any]] = []
+    result_full: dict[str, Any] | None = None
+    error_text: str | None = None
+
+    def _at_ms() -> int:
+        return round((time.time() - t0) * 1000)
+
     try:
         async for message in query(prompt=args.question, options=options):
             if isinstance(message, AssistantMessage):
+                events.append({
+                    "t": "assistant_turn", "at_ms": _at_ms(),
+                    "model": message.model, "usage": message.usage,
+                    "stop_reason": message.stop_reason,
+                })
                 for block in message.content:
                     if isinstance(block, ToolUseBlock):
                         tool_calls += 1
+                        events.append({
+                            "t": "tool_use", "at_ms": _at_ms(),
+                            "tool_use_id": block.id, "name": block.name, "input": block.input,
+                        })
                         print(f"[tool #{tool_calls}] {block.name}")
                         print(f"          {json.dumps(block.input)[:400]}")
                     elif isinstance(block, TextBlock) and block.text.strip():
+                        events.append({"t": "assistant_text", "at_ms": _at_ms(), "text": block.text.strip()})
                         print(f"[agent] {block.text.strip()}")
+            elif isinstance(message, UserMessage) and message.tool_use_result:
+                events.append({
+                    "t": "tool_result", "at_ms": _at_ms(),
+                    "tool_use_result": message.tool_use_result,
+                })
             elif isinstance(message, ResultMessage):
+                result_full = dataclasses.asdict(message)
                 final = getattr(message, "result", None)
                 if final:
                     print(f"\n[final] {final}")
                 print(f"\n=== DONE · {tool_calls} tool call(s) ===")
     except Exception as exc:  # noqa: BLE001 — show the partial trace's ending, not a stack
+        error_text = str(exc)
         print(f"\n=== ENDED WITH ERROR after {tool_calls} tool call(s): {exc} ===")
+
+    if args.trace_out:
+        trace = {
+            "captured_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "mode": mode,
+            "model": args.model,
+            "question": args.question,
+            "tool_calls": tool_calls,
+            "wall_clock_ms": _at_ms(),
+            # events are receipt-order wall-clock timestamps in THIS process — not
+            # execution timestamps like Agentforce's trace; the SDK emits no per-step
+            # start/end times of its own, only the ResultMessage totals below.
+            "events": events,
+            "result": result_full,
+            "error": error_text,
+        }
+        out_path = pathlib.Path(args.trace_out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(trace, indent=2, default=str), encoding="utf-8")
+        print(f"\n[trace] wrote {out_path}")
 
 
 if __name__ == "__main__":
